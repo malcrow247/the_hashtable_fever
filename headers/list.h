@@ -4,8 +4,8 @@
 #include "common.h"
 
 typedef struct node{
-    node *next;
-    node *prev;    
+    struct node *next;
+    struct node *prev;    
     int key;
     int value;
 } node;
@@ -16,12 +16,12 @@ typedef struct list{
     ull size;
 } list;
 
-void create_list(list *lst);
-int list_push_back(list *lst, int key, int value);
-int list_pop_back(list *lst);
-int list_push_front(list *lst, int key, int value);
-int list_pop_front(list *lst);
-int list_delete_node(list *lst, node *n);
-void list_free(list *lst);
+int list_create(list *l);
+void list_free(list *l);
+int list_push_back(list *l, int key, int value);
+int list_pop_back(list *l);
+int list_push_front(list *l, int key, int value);
+int list_pop_front(list *l);
+int list_pop(list *l, node *n);
 
 #endif // LIST_H
