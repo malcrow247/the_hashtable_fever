@@ -3,149 +3,115 @@
 
 #include "list.h"
 
-void create_list(list *lst)
-{
-    if (!lst)
-        return;
+int list_create(list* l) {
+    l->head = NULL;
+    l->tail = NULL;
+    l->size = 0;
 
-    lst->head = NULL;
-    lst->tail = NULL;
-    lst->size = 0;
+    return 0;
 }
 
-int list_push_back(list *lst, int index, int value)
-{
-    if (!lst)
-        return ERR;
+void list_free(list* l) {
+    while (l->size > 0) {
+        list_pop_front(l);
+    }
+}
 
-    node *new = malloc(sizeof(node));
+int list_push_back(list* l, int key, int value) {
+    if (!l) return 1;
+    node* new = malloc(sizeof(node));
+    if (!new) return 1;
 
-    if (!new)
-        return ERR;
-
-    new->index = index;
     new->value = value;
-    new->next = NULL;
-    new->prev = lst->tail;
+    new->key = key;
 
-    if (lst->size == 0)
-        lst->head = new;
-    else
-        lst->tail->next = new;
-    lst->tail = new;
-
-    lst->size++;
-
-    return OK;
+    if (l->size == 0) {
+        new->prev = NULL;
+        l->head = new;
+        l->tail = new;
+    } else {
+        l->tail->next = new;
+        new->prev = l->tail;
+        l->tail = new;
+    }
+    l->size++;
+    return 0;
 }
 
-int list_pop_back(list *lst)
-{
-    if (!lst)
-        return ERR;
+int list_push_front(list* l, int key, int value) {
+    if (!l) return 1;
+    node* new = malloc(sizeof(node));
+    if (!new) return 1;
 
-    if (lst->size > 1)
-    {
-        lst->tail = lst->tail->prev;
-        free(lst->tail->next);
-        lst->tail->next = NULL;
-        lst->size--;
-    }
-    else if (lst->size == 1)
-    {
-        free(lst->tail);
-        lst->head = NULL;
-        lst->tail = NULL;
-        lst->size = 0;
-    }
-
-    return OK;
-}
-
-int list_push_front(list *lst, int index, int value)
-{
-    if (!lst)
-        return ERR;
-
-    node *new = malloc(sizeof(node));
-
-    if (!new)
-        return ERR;
-
-    new->index = index;
     new->value = value;
-    new->prev = NULL;
-    new->next = lst->head;
+    new->key = key;
 
-    if (lst->size == 0)
-        lst->tail = new;
-    else
-        lst->head->prev = new;
-    lst->head = new;
-
-    lst->size++;
-
-    return OK;
+    if (l->size == 0) {
+        new->next = NULL;
+        l->head = new;
+        l->tail = new;
+    } else {
+        l->head->prev = new;
+        new->next = l->head;
+        l->head = new;
+    }
+    l->size++;
+    return 0;
 }
 
-int list_pop_front(list *lst)
-{
-    if (!lst || lst->size == 0)
-        return ERR;
+int list_pop_back(list* l) {
+    if (!l) return 1;
 
-    if (lst->size > 1)
-    {
-        lst->head = lst->head->next;
-        free(lst->head->prev);
-        lst->head->prev = NULL;
-        lst->size--;
+    if (l->size == 1) {
+        free(l->tail);
+        l->head = NULL;
+        l->tail = NULL;
+        l->size = 0;
+    } else if (l->size > 1) {
+        l->tail = l->tail->prev;
+        free(l->tail->next);
+        l->tail->next = NULL;
+        l->size--;
     }
-    else if (lst->size == 1)
-    {
-        free(lst->head);
-        lst->head = NULL;
-        lst->tail = NULL;
-        lst->size = 0;
-    }
-
-    return OK;
+    return 0;
 }
 
-int list_delete_node(list *lst, node *n)
-{
-    if (!lst || !n)
-        return ERR;
+int list_pop_front(list* l) {
+    if (!l) return 1;
 
-    if (n->prev != NULL)
-    {
+    if (l->size == 1) {
+        free(l->head);
+        l->head = NULL;
+        l->tail = NULL;
+        l->size = 0;
+    } else if (l->size > 0) {
+        l->head = l->head->next;
+        free(l->head);
+        l->head->prev = NULL;
+        l->size--;
+    }
+    return 0;
+}
+
+int list_pop(list* l, node* n) {
+    if (!l) return -1;
+    if (!n) return -1;
+
+    if (l->size == 1) {
+        l->size = 0;
+        free(n);
+        l->head = NULL;
+        l->tail = NULL;
+    } else if (l->size > 1) {
+        if (l->head == n) l->head = n->next;
+        if (l->tail == n) l->tail = n->prev;
+
         n->prev->next = n->next;
-    }
-    else
-    {
-        lst->head = NULL;
-    }
-
-    if (n->next != NULL)
-    {
         n->next->prev = n->prev;
-    }
-    else
-    {
-        lst->tail = NULL;
+        free(n);
     }
 
-    free(n);
-
-    return OK;
+    return 0;
 }
 
-void list_free(list *lst)
-{
-    if (!lst)
-        return;
-
-    while (lst->size > 0)
-        list_pop_back(lst);
-}
-
-#endif // LIST_C
+#endif  // LIST_C
