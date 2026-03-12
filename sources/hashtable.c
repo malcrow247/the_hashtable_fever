@@ -3,197 +3,96 @@
 
 #include "hashtable.h"
 
-int hashtable_create(hashtable *h)
-{
-    if (!h)
-        return ERR;
+int hashtable_create(hashtable* h) {
+    if (!h) return -1;
 
-    int status = create_vector(&(h->data), HASHTABLE_START_SIZE);
-
-    if (status != OK)
-        return status;
-
-    for (ull i = 0; i < HASHTABLE_START_SIZE; ++i)
-    {
-        list *lst = malloc(sizeof(list));
-
-        if (!lst)
-        {
-            for (ull j = 0; j < i; ++j)
-            {
-                list_free((list *)h->data.data[j]);
-                free(h->data.data[j]);
-            }
-            free(h->data.data);
-            return ERR;
-        }
-
-        create_list(lst);
-        h->data.data[i] = lst;
-    }
+    h->k = rand() % (int)1e7;
+    h->b = rand() % (int)1e7;
 
     h->size = 0;
 
-    while ((h->hash_mult = rand()) == 0)
-    {
-    }
-
-    while ((h->hash_plus = rand()) == 0)
-    {
-    }
-
-    return OK;
+    int status = vector_create(&(h->data));
+    return status;
 }
 
-void hashtable_free(hashtable *h)
-{
-    if (!h || !h->data.data)
-        return;
+void hashtable_free(hashtable* h) {
+    if (!h) return;
 
-    for (ull i = 0; i < h->data.size; ++i)
-    {
-        list_free((list *)h->data.data[i]);
-        free(h->data.data[i]);
-    }
-
-    free(h->data.data);
+    vector_free(&(h->data));
 }
 
-int hashtable_resize(hashtable *h, ull new_size)
-{
-    if (!h)
-        return ERR;
+int hashtable_set(hashtable* h, int key, int value) {
+    if (!h) return -1;
 
-    void **new_data = calloc(new_size, sizeof(void *));
+    int status;
 
-    for (ull i = 0; i < new_size; ++i)
-    {
-        list *new_lst = malloc(sizeof(list));
+    // hash(x) = k * x + b
+    int hash = (h->k * key + h->b) % h->data.size;
 
-        if (!new_lst)
-        {
-            for (ull j = 0; j < i; ++j)
-            {
-                list_free((list *)new_data[j]);
-                free(new_data[j]);
-            }
+    int isfound = 0;
+    node* now = h->data.data[hash].head;
 
-            free(new_data);
-
-            return ERR;
+    while (now != NULL) {
+        if (now->key == key) {
+            isfound = 1;
+            break;
         }
 
-        create_list(new_lst);
-        new_data[i] = new_lst;
+        now = (node*)now->next;
     }
 
-    for (ull i = 0; i < h->data.size; ++i)
-    {
-        node *now = ((list *)h->data.data[i])->head;
-        while (now != NULL)
-        {
-            int index = now->index, value = now->value;
-            ull hashtable_index =
-                (((ull)index) * h->hash_mult + h->hash_plus) % new_size;
+    if (isfound) {
+        now->value = value;
+        return 0;
+    } else {
+        status = list_push_back(&(h->data.data[hash]), key, value);
+        return status;
+    }
+}
 
-            int status = list_push_back((list *)new_data[hashtable_index], index, value);
+int hashtable_delete(hashtable* h, int key) {
+    if (!h) return -1;
 
-            if (status != OK)
-            {
-                for (ull j = 0; j < new_size; ++j)
-                {
-                    list_free((list *)new_data[j]);
-                    free(new_data[j]);
-                }
+    int hash = (h->k * key + h->b) % h->data.size;
 
-                free(new_data);
-                return ERR;
-            }
+    int isfound = 0;
+    node* now = h->data.data[hash].head;
+
+    while (now != NULL) {
+        if (now->key == key) {
+            isfound = 1;
+            break;
         }
 
-        list_free((list *)h->data.data[i]);
-        free(h->data.data[i]);
+        now = (node*)now->next;
     }
 
-    free(h->data.data);
+    if (isfound) {
+        int status = list_pop(&(h->data.data[hash]), now);
 
-    h->data.data = new_data;
-    h->data.size = new_size;
-
-    return OK;
-}
-
-int hashtable_set_value(hashtable *h, int index, int value)
-{
-    if (!h)
-        return ERR;
-
-    ull hashtable_index = (((ull)index) * h->hash_mult + h->hash_plus);
-
-    node *n = ((list *)h->data.data[hashtable_index % h->data.size])->head;
-    while (n != NULL && n->index != index)
-        n = n->next;
-
-    if (n != NULL)
-    {
-        n->value = value;
-        return OK;
+        return status;
     }
 
-    if ((float)h->size / (float)h->data.size >= 0.7)
-        if (hashtable_resize(h, h->data.size * 2) != OK)
-            return ERR;
-
-    if (list_push_back(h->data.data[hashtable_index % h->data.size], index, value) != OK)
-        return ERR;
-
-    h->size++;
-    return OK;
+    return 0;
 }
 
-int hashtable_get_value(hashtable *h, int index, int *result)
-{
-    ull hashtable_index =
-        (((ull)index) * h->hash_mult + h->hash_plus) % h->data.size;
+int hashtable_search(hashtable* h, int key, int* return_value) {
+    if (!h) return -1;
 
-    node *now = ((list *)h->data.data[hashtable_index])->head;
+    int hash = (h->k * key + h->b) % h->data.size;
 
-    while (now != NULL && now->index != index)
-        now = now->next;
+    node* now = h->data.data[hash].head;
 
-    if (now != NULL)
-    {
-        *result = now->value;
-        return OK;
+    while (now != NULL && now->key != key) {
+        now = (node*)now->next;
     }
-    return NOTEXISTS;
+
+    if (now != NULL) {
+        *return_value = now->value;
+        return 0;
+    }
+
+    return -1;
 }
 
-int hashtable_delete(hashtable *h, int index)
-{
-    if (!h || !h->data.data)
-        return ERR;
-
-    ull hashtable_index =
-        (((ull)index) * h->hash_mult + h->hash_plus) % h->data.size;
-
-    list *lst = (list *)h->data.data[hashtable_index];
-
-    node *now = lst->head;
-    while (now != NULL && now->index != index)
-        now = now->next;
-
-    if (now == NULL)
-        return NOTEXISTS;
-
-    int status = list_delete_node(lst, now);
-
-    if (status != OK)
-        return ERR;
-
-    h->size--;
-
-    return OK;
-}
-
-#endif // HASHTABLE_C
+#endif  // HASHTABLE_C
