@@ -1,74 +1,38 @@
 #ifndef VECTOR_C
 #define VECTOR_C
 
-#include "vector.h"
+#include "vector_list.h"
 
-int create_vector(vector *v, unsigned long long size)
-{
-    if (!v || size == 0)
-        return ERR;
+#include "common.h"
 
-    void **a = calloc(size, sizeof(void *));
-    if (!a)
-        return ERR;
+int vector_create(vector_list* v) {
+    if (!v) return -1;
 
-    v->data = a;
-    v->size = size;
-    v->occupied = 0;
+    list* data = (list*)calloc(100, sizeof(list));
+    if (!data) return -1;
 
-    return OK;
+    v->data = data;
+    v->size = 100;
+
+    return 0;
 }
 
-void free_vector(vector *v)
-{
-    if (!v)
-        return;
+void vector_free(vector_list* v) {
+    if (!v) return;
+    if (!v->data) return;
 
     free(v->data);
 }
 
-int vector_resize(vector *v, unsigned long long new_size)
-{
-    if (!v || new_size == 0 || !v->data)
-        return ERR;
+int vector_resize(vector_list* v, int new_size) {
+    if (!v) return -1;
 
-    void **a = realloc(v->data, sizeof(void *) * new_size);
-    if (!a)
-        return ERR;
+    list* new_data = realloc(v->data, sizeof(list) * new_size);
+    if (!new_data) return -1;
 
-    v->data = a;
-    v->size = new_size;
+    v->data = new_data;
 
-    if (v->occupied > new_size)
-        v->occupied = new_size;
-
-    return OK;
+    return 0;
 }
 
-int vector_push_back(vector *v, void *element)
-{
-    if (!v || !v->data)
-        return ERR;
-
-    if (v->occupied == v->size)
-    {
-        int status = vector_resize(v, v->size * 2);
-        if (status != OK)
-            return ERR;
-    }
-
-    v->data[v->occupied] = element;
-    v->occupied++;
-
-    return OK;
-}
-
-void *vector_get_element(vector *v, unsigned long long index)
-{
-    if (!v || !v->data || index >= v->occupied)
-        return NULL;
-
-    return v->data[index];
-}
-
-#endif // VECTOR_C
+#endif  // VECTOR_C
