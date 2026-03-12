@@ -1,14 +1,9 @@
-// COMMON INCLUDES
+#ifndef COMMON_H
+#define COMMON_H
 
-#ifndef COMMON
-#define COMMON
-
-#include <stdio.h>
-#include <stdlib.h>
+#include "stdio.h"
+#include "stdlib.h"
 
 #define ull unsigned long long
-#define OK (-1)
-#define ERR (-2)
-#define NOTEXISTS (-3)
 
-#endif // COMMON
+#endif  // COMMON_H
